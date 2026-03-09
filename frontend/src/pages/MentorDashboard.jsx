@@ -121,15 +121,6 @@ export default function MentorDashboard() {
               <h3 className="text-xl font-bold mb-2">View Sessions</h3>
               <p className="text-forest-100 text-sm">Track all upcoming and past sessions</p>
             </button>
-
-            <button
-              onClick={() => navigate('/llm')}
-              className="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-cream-50 rounded-xl p-8 text-left transition transform hover:scale-105 shadow-xl group"
-            >
-              <MdAutoAwesome className="w-10 h-10 mb-4 group-hover:scale-110 transition" />
-              <h3 className="text-xl font-bold mb-2">AI Tools</h3>
-              <p className="text-purple-100 text-sm">Use AI to summarize lesson notes</p>
-            </button>
           </div>
         </div>
 
