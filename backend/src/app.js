@@ -1,0 +1,48 @@
+const express = require("express");
+
+const authRoutes = require("./routes/auth.routes");
+const studentRoutes = require("./routes/student.routes");
+const lessonRoutes = require("./routes/lesson.routes");
+const bookingRoutes = require("./routes/booking.routes");
+const sessionRoutes = require("./routes/session.routes");
+const llmRoutes = require("./routes/llm.routes");
+const healthRoutes = require("./routes/health.routes");
+
+const errorHandler = require("./middleware/error.middleware");
+
+const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
+
+const app = express();
+
+
+// middleware
+app.use(express.json());
+app.use(morgan("dev"));
+app.use(helmet());
+app.use(cors());
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+app.use(globalLimiter);
+
+
+// routes
+app.use("/health", healthRoutes);
+app.use("/auth", authRoutes);
+app.use("/students", studentRoutes);
+app.use("/lessons", lessonRoutes);
+app.use("/bookings", bookingRoutes);
+app.use("/sessions", sessionRoutes);
+app.use("/llm", llmRoutes);
+
+
+// global error handler
+app.use(errorHandler);
+
+
+module.exports = app;

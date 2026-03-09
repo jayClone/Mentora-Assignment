@@ -1,0 +1,102 @@
+const Booking = require("../models/Booking");
+const Student = require("../models/Student");
+const Lesson = require("../models/Lesson");
+
+// CREATE BOOKING
+exports.createBooking = async (req, res) => {
+    try {
+        const { studentId, lessonId } = req.body;
+        if (!studentId || !lessonId) {
+            return res.status(400).json({
+                message: "studentId and lessonId are required"
+            });
+        }
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+        if (student.parentId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "You can only book lessons for your own students"
+            });
+        }
+        const lesson = await Lesson.findById(lessonId);
+        if (!lesson) {
+            return res.status(404).json({ message: "Lesson not found" });
+        }
+        const booking = await Booking.create({
+            studentId,
+            lessonId,
+            parentId: req.user._id
+        });
+        res.status(201).json({
+            message: "Booking created successfully",
+            booking
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Booking failed" });
+    }
+};
+
+// GET ALL BOOKINGS
+exports.getBookings = async (req, res) => {
+    try {
+        let bookings;
+        if (req.user.role === "parent") {
+            bookings = await Booking.find({
+                parentId: req.user._id
+            }).populate("studentId lessonId");
+        } else if (req.user.role === "mentor") {
+            bookings = await Booking.find()
+                .populate({
+                    path: "lessonId",
+                    match: { mentorId: req.user._id }
+                })
+                .then(b => b.filter(booking => booking.lessonId !== null));
+        }
+        res.json({ bookings });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+};
+
+// GET SINGLE BOOKING
+exports.getBookingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const booking = await Booking.findById(id)
+            .populate("studentId lessonId");
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+        if (req.user.role === "parent" && booking.parentId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+        if (req.user.role === "mentor" && booking.lessonId.mentorId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+        res.json({ booking });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch booking" });
+    }
+};
+
+// DELETE BOOKING
+exports.deleteBooking = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const booking = await Booking.findById(id);
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+        if (booking.parentId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "You can only cancel your own bookings"
+            });
+        }
+        await Booking.findByIdAndDelete(id);
+        res.json({ message: "Booking cancelled successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to delete booking" });
+    }
+};
