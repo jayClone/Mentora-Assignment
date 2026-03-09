@@ -1,5 +1,23 @@
 const Session = require("../models/Session");
 const Lesson = require("../models/Lesson");
+const Booking = require("../models/Booking");
+
+// GET ALL SESSIONS - parents only see sessions for lessons they have booked
+exports.getAllSessions = async (req, res) => {
+    try {
+        // Find all lesson IDs this parent has booked
+        const bookings = await Booking.find({ parentId: req.user._id }).select("lessonId");
+        const bookedLessonIds = bookings.map((b) => b.lessonId);
+
+        const sessions = await Session.find({ lessonId: { $in: bookedLessonIds } })
+            .populate({ path: "lessonId", populate: { path: "mentorId", select: "name" } })
+            .sort({ date: 1 });
+
+        res.json({ sessions });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 // CREATE SESSION (with mentor validation)
 exports.createSession = async (req, res) => {
@@ -31,6 +49,21 @@ exports.createSession = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: "Failed to create session" });
+    }
+};
+
+// GET MENTOR'S OWN SESSIONS (for mentors only)
+exports.getMentorSessions = async (req, res) => {
+    try {
+        const sessions = await Session.find()
+            .populate({
+                path: "lessonId",
+                match: { mentorId: req.user._id }
+            })
+            .then(s => s.filter(session => session.lessonId !== null));
+        res.json({ sessions });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch your sessions" });
     }
 };
 
@@ -102,5 +135,66 @@ exports.deleteSession = async (req, res) => {
         res.json({ message: "Session deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Failed to delete session" });
+    }
+};
+
+// JOIN SESSION (Student attendance)
+exports.joinSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { studentId } = req.body;
+
+        if (!studentId) {
+            return res.status(400).json({ message: "studentId is required" });
+        }
+
+        const session = await Session.findById(id);
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" });
+        }
+
+        // Check if student already attending
+        if (session.attendees.includes(studentId)) {
+            return res.status(400).json({ message: "Student already attending this session" });
+        }
+
+        // Add student to attendees
+        session.attendees.push(studentId);
+        await session.save();
+
+        res.json({
+            message: "Successfully joined session",
+            session
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to join session" });
+    }
+};
+
+// LEAVE SESSION
+exports.leaveSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { studentId } = req.body;
+
+        if (!studentId) {
+            return res.status(400).json({ message: "studentId is required" });
+        }
+
+        const session = await Session.findById(id);
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" });
+        }
+
+        // Remove student from attendees
+        session.attendees = session.attendees.filter(s => s.toString() !== studentId);
+        await session.save();
+
+        res.json({
+            message: "Successfully left session",
+            session
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to leave session" });
     }
 };

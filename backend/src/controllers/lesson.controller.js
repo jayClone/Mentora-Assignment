@@ -1,5 +1,29 @@
 const Lesson = require("../models/Lesson");
 
+// GET ALL LESSONS (public - for parents to browse)
+exports.getLessons = async (req, res) => {
+    try {
+        const lessons = await Lesson.find()
+            .select("title description mentorId createdAt")
+            .populate("mentorId", "name")
+            .lean();
+        res.json({ lessons });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch lessons" });
+    }
+};
+
+// GET MENTOR'S OWN LESSONS (for mentors only)
+exports.getMentorLessons = async (req, res) => {
+    try {
+        const lessons = await Lesson.find({ mentorId: req.user._id })
+            .populate("mentorId", "name");
+        res.json({ lessons });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch your lessons" });
+    }
+};
+
 // CREATE LESSON (mentor only)
 exports.createLesson = async (req, res) => {
     try {
@@ -22,18 +46,6 @@ exports.createLesson = async (req, res) => {
         res.status(500).json({
             message: "Failed to create lesson"
         });
-    }
-};
-
-// GET ALL LESSONS (public)
-exports.getLessons = async (req, res) => {
-    try {
-        const lessons = await Lesson.find()
-            .select("title description mentorId createdAt")
-            .lean();
-        res.json({ lessons });
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch lessons" });
     }
 };
 

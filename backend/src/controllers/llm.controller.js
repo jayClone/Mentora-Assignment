@@ -1,4 +1,4 @@
-const model = require("../utils/llmClient");
+const { generateWithFallback } = require("../utils/llmClient");
 
 exports.summarizeText = async (req, res) => {
 
@@ -31,18 +31,21 @@ Text:
 ${text}
 `;
 
-        const result = await model.generateContent(prompt);
-
-        const response = await result.response;
-
-        const summary = response.text();
+        const { text: summary, modelUsed } = await generateWithFallback(prompt);
 
         res.json({
             summary,
-            model: "gemini-2.5-flash"
+            model: modelUsed
         });
 
     } catch (error) {
+
+        const status = error?.status ?? error?.response?.status;
+        if (status === 429) {
+            return res.status(429).json({
+                message: "All AI models are currently rate-limited. Please try again later."
+            });
+        }
 
         res.status(502).json({
             message: "LLM service failed"

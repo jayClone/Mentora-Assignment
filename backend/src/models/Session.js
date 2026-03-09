@@ -17,7 +17,13 @@ const sessionSchema = new mongoose.Schema(
     },
     summary: {
         type: String
-    }
+    },
+    attendees: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Student"
+        }
+    ]
 },
 {
     timestamps: true

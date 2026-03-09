@@ -24,10 +24,15 @@ app.use(morgan("dev"));
 app.use(helmet());
 app.use(cors());
 
+// Rate limiting - higher limit for development
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 100 : 5000, // 5000 requests for dev, 100 for prod
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
 app.use(globalLimiter);
 
 

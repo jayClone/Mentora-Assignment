@@ -45,13 +45,17 @@ exports.getBookings = async (req, res) => {
         if (req.user.role === "parent") {
             bookings = await Booking.find({
                 parentId: req.user._id
-            }).populate("studentId lessonId");
+            })
+            .populate("studentId")
+            .populate({ path: "lessonId", populate: { path: "mentorId", select: "name " } });
         } else if (req.user.role === "mentor") {
             bookings = await Booking.find()
                 .populate({
                     path: "lessonId",
-                    match: { mentorId: req.user._id }
+                    match: { mentorId: req.user._id },
+                    populate: { path: "mentorId", select: "name " }
                 })
+                .populate("studentId")
                 .then(b => b.filter(booking => booking.lessonId !== null));
         }
         res.json({ bookings });
