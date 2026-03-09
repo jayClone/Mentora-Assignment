@@ -1,7 +1,7 @@
 # Build stage
 FROM node:18-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src
 
 # Copy package files
 COPY package*.json ./
@@ -12,10 +12,10 @@ RUN npm install --omit=dev
 # Runtime stage
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /src
 
 # Copy node modules from builder
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /src/node_modules ./node_modules
 
 # Copy application code
 COPY . .
