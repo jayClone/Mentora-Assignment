@@ -139,6 +139,20 @@ describe("Booking Endpoints", () => {
       expect(res.statusCode).toBe(403);
       expect(res.body.message).toContain("own students");
     });
+
+    it("Should not allow duplicate booking for same student and lesson", async () => {
+      await request(app)
+        .post("/bookings")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({ studentId, lessonId });
+
+      const res = await request(app)
+        .post("/bookings")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({ studentId, lessonId });
+
+      expect(res.statusCode).toBe(500); // duplicate key on unique index
+    });
   });
 
   describe("GET /bookings", () => {
