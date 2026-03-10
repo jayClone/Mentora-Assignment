@@ -126,14 +126,14 @@ export default function SessionsList() {
 
 
   if (loading) {
-    return <div className="p-8 text-center text-sage-600">Loading...</div>;
+    return <div className="p-4 text-center text-sage-600 sm:p-6 lg:p-8">Loading...</div>;
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-forest-700">
+          <h1 className="text-3xl font-bold text-forest-700 sm:text-4xl">
             {user?.role === 'mentor' ? 'My Sessions' : 'Sessions'}
           </h1>
           <p className="text-sage-600 mt-2">
@@ -149,7 +149,7 @@ export default function SessionsList() {
               setFormData({ lessonId: '', topic: '', date: '', summary: '' });
               setShowForm(!showForm);
             }}
-            className="bg-forest-600 hover:bg-forest-700 text-cream-50 px-6 py-3 rounded-lg flex items-center gap-2 font-semibold transition"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-forest-600 px-5 py-3 font-semibold text-cream-50 transition hover:bg-forest-700 sm:w-auto"
           >
             <MdAdd /> Create Session
           </button>
@@ -158,7 +158,7 @@ export default function SessionsList() {
 
       {/* Create/Edit Session Form */}
       {showForm && user?.role === 'mentor' && (
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8 border-2 border-forest-600">
+        <div className="mb-8 rounded-xl border-2 border-forest-600 bg-white p-5 shadow-lg sm:p-8">
           <h2 className="text-2xl font-bold text-forest-700 mb-6">
             {editingId ? 'Edit Session' : 'Create New Session'}
           </h2>
@@ -225,7 +225,7 @@ export default function SessionsList() {
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <button
                 type="submit"
                 className="flex-1 bg-forest-600 hover:bg-forest-700 text-cream-50 py-3 rounded-lg font-semibold transition"
@@ -249,10 +249,10 @@ export default function SessionsList() {
       )}
 
       {/* Sessions List */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
         {sessions.map((session) => (
           <div key={session._id} className="bg-white rounded-xl shadow-md p-6 border-l-4 border-sage-600 hover:shadow-lg transition">
-            <div className="flex justify-between items-start mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-forest-700">
                   {session.lessonId?.title || 'Untitled Lesson'}

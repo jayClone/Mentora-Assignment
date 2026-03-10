@@ -45,14 +45,14 @@ export default function StudentsList() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-sage-600">Loading...</div>;
+    return <div className="p-4 text-center text-sage-600 sm:p-6 lg:p-8">Loading...</div>;
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-forest-700">My Students</h1>
+          <h1 className="text-3xl font-bold text-forest-700 sm:text-4xl">My Students</h1>
           <p className="text-sage-600 mt-2">Manage and track your students</p>
         </div>
         <button
@@ -60,7 +60,7 @@ export default function StudentsList() {
             setEditingStudent(null);
             setShowForm(!showForm);
           }}
-          className="flex items-center gap-2 bg-forest-600 text-cream-50 px-6 py-3 rounded-lg hover:bg-forest-700 font-semibold transition"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-forest-600 px-5 py-3 font-semibold text-cream-50 transition hover:bg-forest-700 sm:w-auto"
         >
           <MdAdd /> {showForm ? 'Cancel' : 'Add Student'}
         </button>
@@ -70,12 +70,12 @@ export default function StudentsList() {
         <StudentForm student={editingStudent} onClose={handleFormClose} />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {students.map((student) => (
           <div key={student._id} className="bg-white rounded-xl shadow-md p-6 border-t-4 border-forest-600 hover:shadow-lg transition">
             <h3 className="text-xl font-semibold text-forest-700">{student.name}</h3>
             <p className="text-sage-600 mt-2">Age: {student.age}</p>
-            <div className="flex gap-3 mt-6">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => {
                   setEditingStudent(student);

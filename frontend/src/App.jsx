@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import Navbar from './components/Navbar';
@@ -24,21 +25,22 @@ import NotFound from './pages/NotFound';
 
 function AppLayout({ children }) {
   const user = useAuthStore((state) => state.user);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!user) {
     return children;
   }
 
   return (
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Navbar />
-          <main className="flex-1 bg-cream-50">
-            {children}
-          </main>
-        </div>
+    <div className="min-h-screen bg-cream-50 md:flex">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Navbar onMenuToggle={() => setSidebarOpen((open) => !open)} />
+        <main className="flex-1 overflow-x-hidden bg-cream-50">
+          {children}
+        </main>
       </div>
+    </div>
   );
 }
 

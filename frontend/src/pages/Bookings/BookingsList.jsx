@@ -75,20 +75,20 @@ export default function BookingsList() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-sage-600">Loading...</div>;
+    return <div className="p-4 text-center text-sage-600 sm:p-6 lg:p-8">Loading...</div>;
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-forest-700">My Bookings</h1>
+          <h1 className="text-3xl font-bold text-forest-700 sm:text-4xl">My Bookings</h1>
           <p className="text-sage-600 mt-2">Manage your lesson bookings</p>
         </div>
         {user?.role === 'parent' && (
           <button
             onClick={() => setShowBookingForm(!showBookingForm)}
-            className="flex items-center gap-2 bg-forest-600 text-cream-50 px-6 py-3 rounded-lg hover:bg-forest-700 font-semibold transition"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-forest-600 px-5 py-3 font-semibold text-cream-50 transition hover:bg-forest-700 sm:w-auto"
           >
             <MdAdd /> {showBookingForm ? 'Cancel' : 'Book Lesson'}
           </button>
@@ -98,7 +98,7 @@ export default function BookingsList() {
       {showBookingForm && user?.role === 'parent' && (
         <form
           onSubmit={handleCreateBooking}
-          className="bg-white rounded-xl shadow-md p-8 mb-8 border-2 border-sage-200"
+          className="mb-8 rounded-xl border-2 border-sage-200 bg-white p-5 shadow-md sm:p-8"
         >
           <h2 className="text-2xl font-bold text-forest-700 mb-6">Book a Lesson</h2>
           
@@ -152,10 +152,10 @@ export default function BookingsList() {
 
       <div className="mt-8">
         <h2 className="text-2xl font-bold text-forest-700 mb-6">Your Bookings</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           {bookings.map((booking) => (
             <div key={booking._id} className="bg-white rounded-xl shadow-md p-6 border-l-4 border-forest-600 hover:shadow-lg transition">
-              <div className="flex justify-between items-start mb-2">
+              <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <h3 className="text-xl font-semibold text-forest-700">
                   {booking.lessonId?.title}
                 </h3>

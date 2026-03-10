@@ -90,14 +90,14 @@ export default function LessonsList() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-sage-600">Loading...</div>;
+    return <div className="p-4 text-center text-sage-600 sm:p-6 lg:p-8">Loading...</div>;
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-forest-700">
+          <h1 className="text-3xl font-bold text-forest-700 sm:text-4xl">
             {user?.role === 'mentor' ? 'My Lessons' : 'Browse Lessons'}
           </h1>
           <p className="text-sage-600 mt-2">
@@ -112,7 +112,7 @@ export default function LessonsList() {
               setEditingLesson(null);
               setShowForm(!showForm);
             }}
-            className="flex items-center gap-2 bg-forest-600 text-cream-50 px-6 py-3 rounded-lg hover:bg-forest-700 font-semibold transition"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-forest-600 px-5 py-3 font-semibold text-cream-50 transition hover:bg-forest-700 sm:w-auto"
           >
             <MdAdd /> {showForm ? 'Cancel' : 'Create Lesson'}
           </button>
@@ -123,11 +123,11 @@ export default function LessonsList() {
         <LessonForm lesson={editingLesson} onClose={handleFormClose} />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {lessons.map((lesson) => (
           <div key={lesson._id} className="bg-white rounded-xl shadow-md p-6 border-t-4 border-sage-600 hover:shadow-lg transition">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xl font-semibold text-forest-700">{lesson.title}</h3>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <h3 className="text-xl font-semibold text-forest-700 break-words">{lesson.title}</h3>
               {user?.role === 'parent' && isLessonBooked(lesson._id) && (
                 <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full">
                   <MdCheckCircle className="w-3 h-3" /> Booked
@@ -144,7 +144,7 @@ export default function LessonsList() {
               </p>
             )}
             {user?.role === 'mentor' && user?._id === lesson.mentorId?._id && (
-              <div className="flex gap-3 mt-6">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={() => {
                     setEditingLesson(lesson);

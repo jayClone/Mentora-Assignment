@@ -47,7 +47,7 @@ export default function LessonForm({ lesson, onClose }) {
   };
 
   return (
-    <div className="bg-cream-50 rounded-xl shadow-md p-8 mb-8 max-w-md border-2 border-sage-200">
+    <div className="mb-8 w-full max-w-md rounded-xl border-2 border-sage-200 bg-cream-50 p-5 shadow-md sm:p-8">
       <h2 className="text-2xl font-bold text-forest-700 mb-6">
         {lesson ? 'Edit Lesson' : 'Create New Lesson'}
       </h2>
