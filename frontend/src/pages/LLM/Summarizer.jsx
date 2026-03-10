@@ -8,7 +8,8 @@ export default function Summarizer() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const charCount = text.length;
+  const trimmedText = text.trim();
+  const charCount = trimmedText.length;
   const isValid = charCount >= 50 && charCount <= 10000;
 
   const handleSummarize = async (e) => {
@@ -26,7 +27,7 @@ export default function Summarizer() {
 
     setLoading(true);
     try {
-      const result = await summarizeText({ text });
+      const result = await summarizeText({ text: trimmedText }); // Send trimmed text
       setSummary(result.summary);
       toast.success('Text summarized successfully!');
     } catch (error) {
@@ -44,7 +45,7 @@ export default function Summarizer() {
         <h1 className="text-4xl font-bold text-forest-700 flex items-center gap-3">
           <MdAutoAwesome className="text-sage-600" /> AI Text Summarizer
         </h1>
-        <p className="text-sage-600 mt-2">Powered by Gemini 2.5 Flash</p>
+        
       </div>
 
       <div className="mt-8 max-w-4xl">

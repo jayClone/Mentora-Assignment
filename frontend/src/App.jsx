@@ -44,7 +44,6 @@ function AppLayout({ children }) {
 
 function App() {
   const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
 
   return (
     <>
