@@ -4,11 +4,28 @@ const Booking = require("../models/Booking");
 const Student = require("../models/Student");
 const mongoose = require("mongoose");
 
+/**
+ * Validates MongoDB ObjectId format
+ * @param {string} id - The ID string to validate
+ * @returns {boolean} True if valid ObjectId format
+ */
 const validateObjectId = (id) => {
     return mongoose.Types.ObjectId.isValid(id);
 };
 
-// GET ALL SESSIONS - parents only see sessions for lessons they have booked
+/**
+ * Retrieve sessions for lessons the parent has booked
+ * Parents can only see sessions for lessons they have active bookings for
+ * 
+ * @async
+ * @function getAllSessions
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated parent user
+ * @param {Object} res - Express response object
+ * @returns {Object} {sessions: Array} - Sessions sorted by date, with mentor info
+ * @throws {401} Unauthorized (not authenticated)
+ * @throws {500} Server error
+ */
 exports.getAllSessions = async (req, res) => {
     try {
         const bookings = await Booking.find({ parentId: req.user._id }).select("lessonId");
@@ -24,7 +41,26 @@ exports.getAllSessions = async (req, res) => {
     }
 };
 
-// CREATE SESSION (with mentor validation)
+/**
+ * Create a new session for a lesson (mentor-only)
+ * Validates mentor ownership of lesson and future date requirement
+ * 
+ * @async
+ * @function createSession
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.lessonId - Lesson MongoDB ObjectId
+ * @param {string} req.body.date - Session date (ISO 8601 format, must be future date)
+ * @param {string} req.body.topic - Session topic (3-200 characters)
+ * @param {string} [req.body.summary] - Session summary (optional, ≤2000 characters)
+ * @param {Object} req.user - Authenticated mentor user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string, session: Object}
+ * @throws {400} Missing required fields or invalid format
+ * @throws {403} Mentor trying to create session for another's lesson
+ * @throws {404} Lesson not found
+ * @throws {500} Server error
+ */
 exports.createSession = async (req, res) => {
     try {
         const { lessonId, date, topic, summary } = req.body;
@@ -83,7 +119,19 @@ exports.createSession = async (req, res) => {
     }
 };
 
-// GET MENTOR'S OWN SESSIONS (for mentors only)
+/**
+ * Retrieve all sessions created by the authenticated mentor
+ * Mentor-only endpoint for managing their lesson sessions
+ * 
+ * @async
+ * @function getMentorSessions
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated mentor user
+ * @param {Object} res - Express response object
+ * @returns {Object} {sessions: Array} - Sessions for mentor's lessons
+ * @throws {401} Unauthorized (not a mentor)
+ * @throws {500} Server error
+ */
 exports.getMentorSessions = async (req, res) => {
     try {
         const sessions = await Session.find()
@@ -98,7 +146,19 @@ exports.getMentorSessions = async (req, res) => {
     }
 };
 
-// GET SESSIONS BY LESSON
+/**
+ * Retrieve all sessions for a specific lesson
+ * Public endpoint available to browse lesson schedule
+ * 
+ * @async
+ * @function getSessionsByLesson
+ * @param {Object} req - Express request object
+ * @param {string} req.params.lessonId - Lesson MongoDB ObjectId
+ * @param {Object} res - Express response object
+ * @returns {Object} {sessions: Array} - Sessions for the lesson, sorted by date
+ * @throws {400} Invalid lesson ID format
+ * @throws {500} Server error
+ */
 exports.getSessionsByLesson = async (req, res) => {
     try {
         const { lessonId } = req.params;
@@ -114,7 +174,20 @@ exports.getSessionsByLesson = async (req, res) => {
     }
 };
 
-// GET SINGLE SESSION
+/**
+ * Retrieve a single session by ID
+ * Public endpoint to view session details
+ * 
+ * @async
+ * @function getSessionById
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Session MongoDB ObjectId
+ * @param {Object} res - Express response object
+ * @returns {Object} {session: Object} - Session with populated lesson reference
+ * @throws {400} Invalid session ID format
+ * @throws {404} Session not found
+ * @throws {500} Server error
+ */
 exports.getSessionById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -133,7 +206,25 @@ exports.getSessionById = async (req, res) => {
     }
 };
 
-// UPDATE SESSION
+/**
+ * Update session details (mentor-only)
+ * Only mentor who created the session's lesson can update it
+ * 
+ * @async
+ * @function updateSession
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Session MongoDB ObjectId
+ * @param {Object} req.body - Request body (partial)
+ * @param {string} [req.body.topic] - New session topic (optional, 3-200 chars)
+ * @param {string} [req.body.summary] - New session summary (optional, ≤2000 chars)
+ * @param {Object} req.user - Authenticated mentor user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string, session: Object} - Updated session
+ * @throws {400} Invalid session ID format or validation fails
+ * @throws {403} Mentor trying to update another's session
+ * @throws {404} Session not found
+ * @throws {500} Server error
+ */
 exports.updateSession = async (req, res) => {
     try {
         const { id } = req.params;
@@ -187,7 +278,22 @@ exports.updateSession = async (req, res) => {
     }
 };
 
-// DELETE SESSION
+/**
+ * Delete a session permanently (mentor-only)
+ * Only mentor who created the session's lesson can delete it
+ * 
+ * @async
+ * @function deleteSession
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Session MongoDB ObjectId
+ * @param {Object} req.user - Authenticated mentor user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string}
+ * @throws {400} Invalid session ID format
+ * @throws {403} Mentor trying to delete another's session
+ * @throws {404} Session not found
+ * @throws {500} Server error
+ */
 exports.deleteSession = async (req, res) => {
     try {
         const { id } = req.params;
@@ -212,7 +318,24 @@ exports.deleteSession = async (req, res) => {
     }
 };
 
-// JOIN SESSION (Student attendance)
+/**
+ * Add student to session attendance list
+ * Parent can only add their own students; requires active booking for lesson
+ * 
+ * @async
+ * @function joinSession
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Session MongoDB ObjectId
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.studentId - Student MongoDB ObjectId
+ * @param {Object} req.user - Authenticated parent user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string, session: Object} - Updated session with attendees
+ * @throws {400} Invalid IDs or student already attending
+ * @throws {403} Parent trying to add another's student or student not booked
+ * @throws {404} Session or student not found
+ * @throws {500} Server error
+ */
 exports.joinSession = async (req, res) => {
     try {
         const { id } = req.params;
@@ -245,7 +368,6 @@ exports.joinSession = async (req, res) => {
             });
         }
 
-        // Verify the session belongs to a lesson the parent booked
         const booking = await Booking.findOne({
             studentId,
             lessonId: session.lessonId,
@@ -257,12 +379,10 @@ exports.joinSession = async (req, res) => {
             });
         }
 
-        // Check if student already attending
         if (session.attendees.includes(studentId)) {
             return res.status(400).json({ message: "Student already attending this session" });
         }
 
-        // Add student to attendees
         session.attendees.push(studentId);
         await session.save();
 
@@ -275,7 +395,24 @@ exports.joinSession = async (req, res) => {
     }
 };
 
-// LEAVE SESSION
+/**
+ * Remove student from session attendance list
+ * Parent can only remove their own students
+ * 
+ * @async
+ * @function leaveSession
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Session MongoDB ObjectId
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.studentId - Student MongoDB ObjectId
+ * @param {Object} req.user - Authenticated parent user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string, session: Object} - Updated session with attendees
+ * @throws {400} Invalid IDs or student not attending
+ * @throws {403} Parent trying to remove another's student
+ * @throws {404} Session or student not found
+ * @throws {500} Server error
+ */
 exports.leaveSession = async (req, res) => {
     try {
         const { id } = req.params;
@@ -303,14 +440,12 @@ exports.leaveSession = async (req, res) => {
             return res.status(404).json({ message: "Student not found" });
         }
 
-        // Verify student is actually in the session
         if (!session.attendees.includes(studentId)) {
             return res.status(400).json({
                 message: "Student is not attending this session"
             });
         }
 
-        // Remove student from attendees
         session.attendees = session.attendees.filter(s => s.toString() !== studentId);
         await session.save();
 

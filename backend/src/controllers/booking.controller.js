@@ -3,12 +3,34 @@ const Student = require("../models/Student");
 const Lesson = require("../models/Lesson");
 const mongoose = require("mongoose");
 
-// VALIDATION HELPER - Define FIRST, use later
+/**
+ * Validates MongoDB ObjectId format
+ * @param {string} id - The ID string to validate
+ * @returns {boolean} True if valid ObjectId format
+ */
 const validateObjectId = (id) => {
     return mongoose.Types.ObjectId.isValid(id);
 };
 
-// CREATE BOOKING
+/**
+ * Create a lesson booking for a student
+ * Validates student ownership and prevents duplicate bookings via unique index
+ * 
+ * @async
+ * @function createBooking
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.studentId - Student MongoDB ObjectId
+ * @param {string} req.body.lessonId - Lesson MongoDB ObjectId
+ * @param {Object} req.user - Authenticated parent user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string, booking: Object}
+ * @throws {400} Missing or invalid IDs
+ * @throws {403} Parent trying to book for another's student
+ * @throws {404} Student or lesson not found
+ * @throws {409} Duplicate booking exists
+ * @throws {500} Server error
+ */
 exports.createBooking = async (req, res) => {
     try {
         const { studentId, lessonId } = req.body;
@@ -61,7 +83,19 @@ exports.createBooking = async (req, res) => {
     }
 };
 
-// GET ALL BOOKINGS
+/**
+ * Retrieve all bookings based on user role
+ * Parents see only their bookings; mentors see bookings for their lessons
+ * 
+ * @async
+ * @function getBookings
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated user (parent or mentor)
+ * @param {Object} res - Express response object
+ * @returns {Object} {bookings: Array} - Populated bookings with student and lesson details
+ * @throws {401} Unauthorized (no token)
+ * @throws {500} Server error
+ */
 exports.getBookings = async (req, res) => {
     try {
         let bookings;
@@ -89,7 +123,22 @@ exports.getBookings = async (req, res) => {
     }
 };
 
-// GET SINGLE BOOKING
+/**
+ * Retrieve a single booking by ID with authentication checks
+ * Parents can only view their own bookings; mentors can only view bookings for their lessons
+ * 
+ * @async
+ * @function getBookingById
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Booking MongoDB ObjectId
+ * @param {Object} req.user - Authenticated user
+ * @param {Object} res - Express response object
+ * @returns {Object} {booking: Object} - Booking with populated references
+ * @throws {400} Invalid booking ID format
+ * @throws {403} Unauthorized access
+ * @throws {404} Booking not found
+ * @throws {500} Server error
+ */
 exports.getBookingById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -120,7 +169,22 @@ exports.getBookingById = async (req, res) => {
     }
 };
 
-// DELETE BOOKING
+/**
+ * Cancel a booking (soft/hard delete)
+ * Only the parent who created the booking can delete it
+ * 
+ * @async
+ * @function deleteBooking
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Booking MongoDB ObjectId
+ * @param {Object} req.user - Authenticated parent user
+ * @param {Object} res - Express response object
+ * @returns {Object} {message: string}
+ * @throws {400} Invalid booking ID format
+ * @throws {403} Parent trying to cancel another's booking
+ * @throws {404} Booking not found
+ * @throws {500} Server error
+ */
 exports.deleteBooking = async (req, res) => {
     try {
         const { id } = req.params;

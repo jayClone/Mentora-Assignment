@@ -29,7 +29,7 @@ app.use(cors({
 
 // Rate limiting - higher limit for development
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 5000, // 5000 requests for dev, 100 for prod
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,

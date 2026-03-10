@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { getMentorLessons } from '../services/lessons';
 import { getMentorSessions } from '../services/sessions';
 import { getBookings } from '../services/bookings';
-import { MdSchool, MdDateRange, MdAutoAwesome, MdAdd, MdTrendingUp, MdPeople, MdCheckCircle } from 'react-icons/md';
+import { MdSchool, MdDateRange, MdAdd, MdTrendingUp, MdPeople, MdCheckCircle } from 'react-icons/md';
 
 export default function MentorDashboard() {
   const user = useAuthStore((state) => state.user);

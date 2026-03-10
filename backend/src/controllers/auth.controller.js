@@ -2,30 +2,41 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
-// SIGNUP
+/**
+ * User signup with comprehensive validation
+ * Creates new parent or mentor account with email uniqueness check
+ * 
+ * @async
+ * @function signup
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - User full name (1-100 characters)
+ * @param {string} req.body.email - User email (unique, valid format required)
+ * @param {string} req.body.password - User password (minimum 6 characters)
+ * @param {string} req.body.role - User role ('parent' or 'mentor')
+ * @param {Object} res - Express response object
+ * @returns {Object} {token: string, user: {id, name, email, role}}
+ * @throws {400} Missing required fields or invalid format
+ * @throws {409} Email already exists
+ * @throws {500} Server error during signup
+ */
 exports.signup = async (req, res) => {
-
     try {
-
         const { name, email, password, role } = req.body;
 
-        // Check fields exist
         if (!name || !email || !password) {
             return res.status(400).json({ 
                 message: "Name, email, and password are required" 
             });
         }
 
-        // ✅ VALIDATE ROLE EARLY
         if (!["parent", "mentor"].includes(role)) {
             return res.status(400).json({ message: "Invalid role" });
         }
 
-        // Trim whitespace
         const trimmedName = name.trim();
         const trimmedEmail = email.trim().toLowerCase();
 
-        // Check if trimmed values are empty
         if (!trimmedName) {
             return res.status(400).json({ message: "Name cannot be empty" });
         }
@@ -34,13 +45,11 @@ exports.signup = async (req, res) => {
             return res.status(400).json({ message: "Email cannot be empty" });
         }
 
-        // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedEmail)) {
             return res.status(400).json({ message: "Invalid email format" });
         }
 
-        // Validate password strength
         if (password.length < 6) {
             return res.status(400).json({ 
                 message: "Password must be at least 6 characters" 
@@ -48,7 +57,6 @@ exports.signup = async (req, res) => {
         }
 
         const existingUser = await User.findOne({ email: trimmedEmail });
-
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
@@ -80,14 +88,26 @@ exports.signup = async (req, res) => {
 
 };
 
-// LOGIN
+/**
+ * User login with email and password authentication
+ * Validates credentials against hashed password in database
+ * 
+ * @async
+ * @function login
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User email address
+ * @param {string} req.body.password - User password (plain text)
+ * @param {Object} res - Express response object
+ * @returns {Object} {token: string, user: {id, name, email, role}}
+ * @throws {400} Missing email or password
+ * @throws {401} Invalid credentials
+ * @throws {500} Server error during login
+ */
 exports.login = async (req, res) => {
-
     try {
-
         const { email, password } = req.body;
 
-        // Validate required fields
         if (!email?.trim() || !password) {
             return res.status(400).json({
                 message: "Email and password are required"
@@ -125,7 +145,18 @@ exports.login = async (req, res) => {
 
 };
 
-// GET CURRENT USER
+/**
+ * Retrieve current authenticated user information
+ * Returns user object from JWT token payload (set by auth middleware)
+ * 
+ * @async
+ * @function me
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated user object (from auth middleware)
+ * @param {Object} res - Express response object
+ * @returns {Object} {user: {_id, name, email, role, createdAt, updatedAt}}
+ * @throws {401} Unauthorized (no valid token)
+ */
 exports.me = async (req, res) => {
 
     res.json({

@@ -24,9 +24,9 @@ async function generateWithFallback(prompt) {
             const status = err?.status ?? err?.response?.status;
             if (status === 429 || status === 503) {
                 lastError = err;
-                continue; // try next model
+                continue; 
             }
-            throw err; // non-rate-limit error — propagate immediately
+            throw err;
         }
     }
 

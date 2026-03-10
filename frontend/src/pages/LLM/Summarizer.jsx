@@ -27,7 +27,7 @@ export default function Summarizer() {
 
     setLoading(true);
     try {
-      const result = await summarizeText({ text: trimmedText }); // Send trimmed text
+      const result = await summarizeText({ text: trimmedText });
       setSummary(result.summary);
       toast.success('Text summarized successfully!');
     } catch (error) {

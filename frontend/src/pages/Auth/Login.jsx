@@ -30,7 +30,6 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    // Validate before API call
     if (!validateForm()) {
       setLoading(false);
       return;
@@ -40,25 +39,20 @@ export default function Login() {
       const { user, token } = await login({ email, password });
       setAuth(user, token);
       toast.success('Login successful!');
-      // Redirect to role-specific dashboard
+
       const redirectPath = user.role === 'parent' ? '/parent-dashboard' : '/mentor-dashboard';
       navigate(redirectPath);
     } catch (error) {
-      // Handle different error scenarios
       const status = error.response?.status;
       const message = error.response?.data?.message;
 
       if (status === 400) {
-        // Missing or invalid fields
         setError(message || 'Please check your email and password');
       } else if (status === 401) {
-        // Invalid credentials
         setError('Email or password is incorrect. Please try again.');
       } else if (status === 500) {
-        // Server error
         setError('Server error. Please try again later.');
       } else {
-        // Network or unknown error
         setError('Login failed. Please check your connection and try again.');
       }
       
@@ -102,7 +96,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setError(''); // Clear error when user starts typing
+                  setError('');
                 }}
               />
             </div>
@@ -121,7 +115,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setError(''); // Clear error when user starts typing
+                  setError('');
                 }}
               />
             </div>
