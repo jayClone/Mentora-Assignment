@@ -87,6 +87,64 @@ describe("Auth Endpoints", () => {
         });
 
       expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("required");
+    });
+
+    it("Should reject invalid email format", async () => {
+      const res = await request(app)
+        .post("/auth/signup")
+        .send({
+          name: "Test User",
+          email: "invalid-email",
+          password: "password123",
+          role: "parent"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid email format");
+    });
+
+    it("Should reject password less than 6 characters", async () => {
+      const res = await request(app)
+        .post("/auth/signup")
+        .send({
+          name: "Test User",
+          email: "test@example.com",
+          password: "pass",
+          role: "parent"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("at least 6 characters");
+    });
+
+    it("Should reject empty name after trimming", async () => {
+      const res = await request(app)
+        .post("/auth/signup")
+        .send({
+          name: "   ",
+          email: "test@example.com",
+          password: "password123",
+          role: "parent"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Name cannot be empty");
+    });
+
+    it("Should trim whitespace from name and email", async () => {
+      const res = await request(app)
+        .post("/auth/signup")
+        .send({
+          name: "  John Parent  ",
+          email: "  parent@example.com  ",
+          password: "password123",
+          role: "parent"
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.user.name).toBe("John Parent");
+      expect(res.body.user.email).toBe("parent@example.com");
     });
   });
 
@@ -141,6 +199,40 @@ describe("Auth Endpoints", () => {
 
       expect(res.statusCode).toBe(401);
       expect(res.body.message).toContain("Invalid credentials");
+    });
+
+    it("Should fail without email", async () => {
+      const res = await request(app)
+        .post("/auth/login")
+        .send({
+          password: "password123"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("required");
+    });
+
+    it("Should fail without password", async () => {
+      const res = await request(app)
+        .post("/auth/login")
+        .send({
+          email: "test@example.com"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("required");
+    });
+
+    it("Should handle case-insensitive email", async () => {
+      const res = await request(app)
+        .post("/auth/login")
+        .send({
+          email: "TEST@EXAMPLE.COM",
+          password: "password123"
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty("token");
     });
   });
 

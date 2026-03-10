@@ -1,17 +1,34 @@
 const Student = require("../models/Student");
+const mongoose = require("mongoose");
+
+const validateObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+};
 
 // CREATE STUDENT
 exports.createStudent = async (req, res) => {
     try {
         const { name, age } = req.body;
-        if (!name || !age) {
+        if (!name?.trim() || age === undefined) {
             return res.status(400).json({
                 message: "Name and age are required"
             });
         }
+        const ageNum = parseInt(age, 10);
+        if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+            return res.status(400).json({
+                message: "Age must be between 1 and 120"
+            });
+        }
+        const trimmedName = name.trim();
+        if (trimmedName.length === 0 || trimmedName.length > 100) {
+            return res.status(400).json({
+                message: "Name must be 1-100 characters"
+            });
+        }
         const student = await Student.create({
-            name,
-            age,
+            name: trimmedName,
+            age: ageNum,
             parentId: req.user._id
         });
         res.status(201).json({
@@ -39,6 +56,11 @@ exports.getStudents = async (req, res) => {
 exports.getStudentById = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid student ID format" });
+        }
+        
         const student = await Student.findById(id);
         if (!student) {
             return res.status(404).json({ message: "Student not found" });
@@ -59,6 +81,11 @@ exports.updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, age } = req.body;
+        
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid student ID format" });
+        }
+        
         const student = await Student.findById(id);
         if (!student) {
             return res.status(404).json({ message: "Student not found" });
@@ -68,8 +95,27 @@ exports.updateStudent = async (req, res) => {
                 message: "You can only update your own students"
             });
         }
-        if (name) student.name = name;
-        if (age) student.age = age;
+        
+        if (name) {
+            const trimmedName = name.trim();
+            if (trimmedName.length === 0 || trimmedName.length > 100) {
+                return res.status(400).json({
+                    message: "Name must be 1-100 characters"
+                });
+            }
+            student.name = trimmedName;
+        }
+        
+        if (age !== undefined) {
+            const ageNum = parseInt(age, 10);
+            if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+                return res.status(400).json({
+                    message: "Age must be between 1 and 120"
+                });
+            }
+            student.age = ageNum;
+        }
+        
         await student.save();
         res.json({
             message: "Student updated successfully",
@@ -84,6 +130,11 @@ exports.updateStudent = async (req, res) => {
 exports.deleteStudent = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid student ID format" });
+        }
+        
         const student = await Student.findById(id);
         if (!student) {
             return res.status(404).json({ message: "Student not found" });

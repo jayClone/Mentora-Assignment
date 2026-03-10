@@ -8,12 +8,33 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
+  // Client-side validation
+  const validateForm = () => {
+    if (!email.trim()) {
+      setError('Email is required');
+      return false;
+    }
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
+
+    // Validate before API call
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const { user, token } = await login({ email, password });
@@ -23,6 +44,24 @@ export default function Login() {
       const redirectPath = user.role === 'parent' ? '/parent-dashboard' : '/mentor-dashboard';
       navigate(redirectPath);
     } catch (error) {
+      // Handle different error scenarios
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+
+      if (status === 400) {
+        // Missing or invalid fields
+        setError(message || 'Please check your email and password');
+      } else if (status === 401) {
+        // Invalid credentials
+        setError('Email or password is incorrect. Please try again.');
+      } else if (status === 500) {
+        // Server error
+        setError('Server error. Please try again later.');
+      } else {
+        // Network or unknown error
+        setError('Login failed. Please check your connection and try again.');
+      }
+      
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -38,6 +77,14 @@ export default function Login() {
           </h2>
           <p className="mt-2 text-center text-sage-600">Sign in to your Mentora account</p>
         </div>
+        
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+            <p className="text-red-700 text-sm font-medium">{error}</p>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6 bg-white rounded-2xl shadow-lg p-8" onSubmit={handleSubmit}>
           <div className="rounded-lg space-y-4">
             <div>
@@ -48,10 +95,15 @@ export default function Login() {
                 id="email"
                 type="email"
                 required
-                className="w-full px-4 py-3 border-2 border-sage-200 placeholder-sage-400 text-forest-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition"
+                className={`w-full px-4 py-3 border-2 placeholder-sage-400 text-forest-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition ${
+                  error ? 'border-red-500' : 'border-sage-200'
+                }`}
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(''); // Clear error when user starts typing
+                }}
               />
             </div>
             <div>
@@ -62,10 +114,15 @@ export default function Login() {
                 id="password"
                 type="password"
                 required
-                className="w-full px-4 py-3 border-2 border-sage-200 placeholder-sage-400 text-forest-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition"
+                className={`w-full px-4 py-3 border-2 placeholder-sage-400 text-forest-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition ${
+                  error ? 'border-red-500' : 'border-sage-200'
+                }`}
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(''); // Clear error when user starts typing
+                }}
               />
             </div>
           </div>

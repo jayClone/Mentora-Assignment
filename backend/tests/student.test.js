@@ -16,7 +16,6 @@ describe("Student Endpoints", () => {
     await User.deleteMany({});
     await Student.deleteMany({});
 
-    // Create parent user
     const parentRes = await request(app)
       .post("/auth/signup")
       .send({
@@ -28,7 +27,6 @@ describe("Student Endpoints", () => {
     parentToken = parentRes.body.token;
     parentUser = parentRes.body.user;
 
-    // Create mentor user
     const mentorRes = await request(app)
       .post("/auth/signup")
       .send({
@@ -92,6 +90,72 @@ describe("Student Endpoints", () => {
       expect(res.statusCode).toBe(400);
       expect(res.body.message).toContain("required");
     });
+
+    it("Should reject age less than 1", async () => {
+      const res = await request(app)
+        .post("/students")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: "Test Student",
+          age: 0
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Age must be between 1 and 120");
+    });
+
+    it("Should reject age greater than 120", async () => {
+      const res = await request(app)
+        .post("/students")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: "Test Student",
+          age: 121
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Age must be between 1 and 120");
+    });
+
+    it("Should reject name greater than 100 characters", async () => {
+      const longName = "A".repeat(101);
+      const res = await request(app)
+        .post("/students")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: longName,
+          age: 12
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("1-100 characters");
+    });
+
+    it("Should reject empty name after trimming", async () => {
+      const res = await request(app)
+        .post("/students")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: "   ",
+          age: 12
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("required");
+    });
+
+    it("Should trim whitespace from name", async () => {
+      const res = await request(app)
+        .post("/students")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: "  John Doe  ",
+          age: 12
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.student.name).toBe("John Doe");
+    });
   });
 
   describe("GET /students", () => {
@@ -119,7 +183,6 @@ describe("Student Endpoints", () => {
     });
 
     it("Should only return logged-in parent's students", async () => {
-      // Create another parent
       const otherParentRes = await request(app)
         .post("/auth/signup")
         .send({
@@ -129,7 +192,6 @@ describe("Student Endpoints", () => {
           role: "parent"
         });
 
-      // Get first parent's students
       const res = await request(app)
         .get("/students")
         .set("Authorization", `Bearer ${parentToken}`);
@@ -191,6 +253,16 @@ describe("Student Endpoints", () => {
         .set("Authorization", `Bearer ${parentToken}`);
 
       expect(res.statusCode).toBe(404);
+      expect(res.body.message).toContain("Student not found");
+    });
+
+    it("Should reject invalid student ID format", async () => {
+      const res = await request(app)
+        .get(`/students/invalid-id`)
+        .set("Authorization", `Bearer ${parentToken}`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid student ID format");
     });
   });
 
@@ -221,6 +293,31 @@ describe("Student Endpoints", () => {
       expect(res.body.student.age).toBe(13);
     });
 
+    it("Should reject invalid age on update", async () => {
+      const res = await request(app)
+        .put(`/students/${studentId}`)
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          age: 150
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Age must be between 1 and 120");
+    });
+
+    it("Should reject invalid name length on update", async () => {
+      const longName = "A".repeat(101);
+      const res = await request(app)
+        .put(`/students/${studentId}`)
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: longName
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("1-100 characters");
+    });
+
     it("Should fail if parent tries to update another parent's student", async () => {
       const otherParentRes = await request(app)
         .post("/auth/signup")
@@ -239,6 +336,18 @@ describe("Student Endpoints", () => {
         });
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it("Should reject invalid student ID format", async () => {
+      const res = await request(app)
+        .put(`/students/invalid-id`)
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          name: "Updated"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid student ID format");
     });
   });
 
@@ -284,6 +393,15 @@ describe("Student Endpoints", () => {
         .set("Authorization", `Bearer ${otherParentRes.body.token}`);
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it("Should reject invalid student ID format", async () => {
+      const res = await request(app)
+        .delete(`/students/invalid-id`)
+        .set("Authorization", `Bearer ${parentToken}`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid student ID format");
     });
   });
 });

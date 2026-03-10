@@ -75,7 +75,88 @@ describe("Lesson Endpoints", () => {
         });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toContain("required");
+      expect(res.body.message).toContain("cannot be empty");
+    });
+
+    it("Should reject title less than 3 characters", async () => {
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "ab",
+          description: "Valid description"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Title must be 3-200 characters");
+    });
+
+    it("Should reject title greater than 200 characters", async () => {
+      const longTitle = "A".repeat(201);
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: longTitle,
+          description: "Valid description"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Title must be 3-200 characters");
+    });
+
+    it("Should reject description less than 10 characters", async () => {
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "Valid Title",
+          description: "Short"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Description must be 10-5000 characters");
+    });
+
+    it("Should reject description greater than 5000 characters", async () => {
+      const longDesc = "A".repeat(5001);
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "Valid Title",
+          description: longDesc
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Description must be 10-5000 characters");
+    });
+
+    it("Should reject whitespace-only title", async () => {
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "   ",
+          description: "Valid description"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("cannot be empty");
+    });
+
+    it("Should trim whitespace from title and description", async () => {
+      const res = await request(app)
+        .post("/lessons")
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "  Math Basics  ",
+          description: "  Learn fundamental math concepts  "
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.lesson.title).toBe("Math Basics");
+      expect(res.body.lesson.description).toBe("Learn fundamental math concepts");
     });
   });
 
@@ -136,6 +217,15 @@ describe("Lesson Endpoints", () => {
         .get(`/lessons/${fakeId}`);
 
       expect(res.statusCode).toBe(404);
+      expect(res.body.message).toContain("Lesson not found");
+    });
+
+    it("Should reject invalid lesson ID format", async () => {
+      const res = await request(app)
+        .get(`/lessons/invalid-id`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid lesson ID format");
     });
   });
 
@@ -163,6 +253,30 @@ describe("Lesson Endpoints", () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.lesson.title).toBe("Advanced Math");
+    });
+
+    it("Should reject title with invalid length on update", async () => {
+      const res = await request(app)
+        .put(`/lessons/${lessonId}`)
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "ab"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Title must be 3-200 characters");
+    });
+
+    it("Should reject description with invalid length on update", async () => {
+      const res = await request(app)
+        .put(`/lessons/${lessonId}`)
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          description: "Short"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Description must be 10-5000 characters");
     });
 
     it("Should fail if other mentor tries to update", async () => {
@@ -194,6 +308,18 @@ describe("Lesson Endpoints", () => {
         });
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it("Should reject invalid lesson ID format", async () => {
+      const res = await request(app)
+        .put(`/lessons/invalid-id`)
+        .set("Authorization", `Bearer ${mentorToken}`)
+        .send({
+          title: "Updated"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid lesson ID format");
     });
   });
 
@@ -238,6 +364,15 @@ describe("Lesson Endpoints", () => {
         .set("Authorization", `Bearer ${otherMentorRes.body.token}`);
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it("Should reject invalid lesson ID format", async () => {
+      const res = await request(app)
+        .delete(`/lessons/invalid-id`)
+        .set("Authorization", `Bearer ${mentorToken}`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid lesson ID format");
     });
   });
 });

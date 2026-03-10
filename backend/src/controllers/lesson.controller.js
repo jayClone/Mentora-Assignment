@@ -1,4 +1,9 @@
 const Lesson = require("../models/Lesson");
+const mongoose = require("mongoose");
+
+const validateObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+};
 
 // GET ALL LESSONS (public - for parents to browse)
 exports.getLessons = async (req, res) => {
@@ -28,14 +33,30 @@ exports.getMentorLessons = async (req, res) => {
 exports.createLesson = async (req, res) => {
     try {
         const { title, description } = req.body;
-        if (!title || !description) {
+        const trimmedTitle = title?.trim();
+        const trimmedDesc = description?.trim();
+
+        if (!trimmedTitle || !trimmedDesc) {
             return res.status(400).json({
-                message: "Title and description are required"
+                message: "Title and description cannot be empty"
             });
         }
+
+        if (trimmedTitle.length < 3 || trimmedTitle.length > 200) {
+            return res.status(400).json({
+                message: "Title must be 3-200 characters"
+            });
+        }
+
+        if (trimmedDesc.length < 10 || trimmedDesc.length > 5000) {
+            return res.status(400).json({
+                message: "Description must be 10-5000 characters"
+            });
+        }
+
         const lesson = await Lesson.create({
-            title,
-            description,
+            title: trimmedTitle,
+            description: trimmedDesc,
             mentorId: req.user._id
         });
         res.status(201).json({
@@ -53,6 +74,11 @@ exports.createLesson = async (req, res) => {
 exports.getLessonById = async (req, res) => {
     try {
         const { id } = req.params;
+
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid lesson ID format" });
+        }
+
         const lesson = await Lesson.findById(id);
         if (!lesson) {
             return res.status(404).json({ message: "Lesson not found" });
@@ -68,6 +94,11 @@ exports.updateLesson = async (req, res) => {
     try {
         const { id } = req.params;
         const { title, description } = req.body;
+
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid lesson ID format" });
+        }
+
         const lesson = await Lesson.findById(id);
         if (!lesson) {
             return res.status(404).json({ message: "Lesson not found" });
@@ -77,8 +108,33 @@ exports.updateLesson = async (req, res) => {
                 message: "You can only update your own lessons"
             });
         }
-        if (title) lesson.title = title;
-        if (description) lesson.description = description;
+
+        if (title) {
+            const trimmedTitle = title.trim();
+            if (!trimmedTitle) {
+                return res.status(400).json({ message: "Title cannot be empty" });
+            }
+            if (trimmedTitle.length < 3 || trimmedTitle.length > 200) {
+                return res.status(400).json({
+                    message: "Title must be 3-200 characters"
+                });
+            }
+            lesson.title = trimmedTitle;
+        }
+
+        if (description) {
+            const trimmedDesc = description.trim();
+            if (!trimmedDesc) {
+                return res.status(400).json({ message: "Description cannot be empty" });
+            }
+            if (trimmedDesc.length < 10 || trimmedDesc.length > 5000) {
+                return res.status(400).json({
+                    message: "Description must be 10-5000 characters"
+                });
+            }
+            lesson.description = trimmedDesc;
+        }
+
         await lesson.save();
         res.json({
             message: "Lesson updated successfully",
@@ -93,6 +149,11 @@ exports.updateLesson = async (req, res) => {
 exports.deleteLesson = async (req, res) => {
     try {
         const { id } = req.params;
+
+        if (!validateObjectId(id)) {
+            return res.status(400).json({ message: "Invalid lesson ID format" });
+        }
+
         const lesson = await Lesson.findById(id);
         if (!lesson) {
             return res.status(404).json({ message: "Lesson not found" });

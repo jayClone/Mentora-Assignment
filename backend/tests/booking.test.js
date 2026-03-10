@@ -41,7 +41,6 @@ describe("Booking Endpoints", () => {
       });
     mentorToken = mentorRes.body.token;
 
-    // Create student
     const studentRes = await request(app)
       .post("/students")
       .set("Authorization", `Bearer ${parentToken}`)
@@ -51,7 +50,6 @@ describe("Booking Endpoints", () => {
       });
     studentId = studentRes.body.student._id;
 
-    // Create lesson
     const lessonRes = await request(app)
       .post("/lessons")
       .set("Authorization", `Bearer ${mentorToken}`)
@@ -151,7 +149,34 @@ describe("Booking Endpoints", () => {
         .set("Authorization", `Bearer ${parentToken}`)
         .send({ studentId, lessonId });
 
-      expect(res.statusCode).toBe(500); // duplicate key on unique index
+      expect(res.statusCode).toBe(409);
+      expect(res.body.message).toContain("already booked");
+    });
+
+    it("Should reject invalid studentId format", async () => {
+      const res = await request(app)
+        .post("/bookings")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          studentId: "invalid-id",
+          lessonId
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid studentId or lessonId format");
+    });
+
+    it("Should reject invalid lessonId format", async () => {
+      const res = await request(app)
+        .post("/bookings")
+        .set("Authorization", `Bearer ${parentToken}`)
+        .send({
+          studentId,
+          lessonId: "invalid-id"
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid studentId or lessonId format");
     });
   });
 
@@ -241,6 +266,15 @@ describe("Booking Endpoints", () => {
 
       expect(res.statusCode).toBe(403);
     });
+
+    it("Should reject invalid booking ID format", async () => {
+      const res = await request(app)
+        .get(`/bookings/invalid-id`)
+        .set("Authorization", `Bearer ${parentToken}`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid booking ID format");
+    });
   });
 
   describe("DELETE /bookings/:id", () => {
@@ -285,6 +319,15 @@ describe("Booking Endpoints", () => {
         .set("Authorization", `Bearer ${otherParentRes.body.token}`);
 
       expect(res.statusCode).toBe(403);
+    });
+
+    it("Should reject invalid booking ID format", async () => {
+      const res = await request(app)
+        .delete(`/bookings/invalid-id`)
+        .set("Authorization", `Bearer ${parentToken}`);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toContain("Invalid booking ID format");
     });
   });
 });

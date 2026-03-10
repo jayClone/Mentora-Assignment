@@ -2,7 +2,6 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
-
 // SIGNUP
 exports.signup = async (req, res) => {
 
@@ -10,11 +9,45 @@ exports.signup = async (req, res) => {
 
         const { name, email, password, role } = req.body;
 
+        // Check fields exist
+        if (!name || !email || !password) {
+            return res.status(400).json({ 
+                message: "Name, email, and password are required" 
+            });
+        }
+
+        // ✅ VALIDATE ROLE EARLY
         if (!["parent", "mentor"].includes(role)) {
             return res.status(400).json({ message: "Invalid role" });
         }
 
-        const existingUser = await User.findOne({ email });
+        // Trim whitespace
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim().toLowerCase();
+
+        // Check if trimmed values are empty
+        if (!trimmedName) {
+            return res.status(400).json({ message: "Name cannot be empty" });
+        }
+
+        if (!trimmedEmail) {
+            return res.status(400).json({ message: "Email cannot be empty" });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedEmail)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        // Validate password strength
+        if (password.length < 6) {
+            return res.status(400).json({ 
+                message: "Password must be at least 6 characters" 
+            });
+        }
+
+        const existingUser = await User.findOne({ email: trimmedEmail });
 
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
@@ -23,8 +56,8 @@ exports.signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
-            name,
-            email,
+            name: trimmedName,
+            email: trimmedEmail,
             password: hashedPassword,
             role
         });
@@ -47,7 +80,6 @@ exports.signup = async (req, res) => {
 
 };
 
-
 // LOGIN
 exports.login = async (req, res) => {
 
@@ -55,7 +87,15 @@ exports.login = async (req, res) => {
 
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        // Validate required fields
+        if (!email?.trim() || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
+            });
+        }
+
+        const trimmedEmail = email.trim().toLowerCase();
+        const user = await User.findOne({ email: trimmedEmail });
 
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
@@ -84,7 +124,6 @@ exports.login = async (req, res) => {
     }
 
 };
-
 
 // GET CURRENT USER
 exports.me = async (req, res) => {
